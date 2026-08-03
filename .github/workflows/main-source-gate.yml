@@ -1,0 +1,23 @@
+name: gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only preview or hotfix/* may reach main
+        run: |
+          HEAD="${{ github.head_ref }}"
+          echo "Head branch: $HEAD"
+          case "$HEAD" in
+            preview|hotfix/*)
+              echo "Allowed source branch: $HEAD"
+              ;;
+            *)
+              echo "::error::Only 'preview' or 'hotfix/*' may merge into main (got '$HEAD'). Re-target this PR to preview, or rename the branch hotfix/* if it is a genuine emergency."
+              exit 1
+              ;;
+          esac
