@@ -10,6 +10,14 @@
   "steps": [
     {
       "n": 1,
+      "action": "setViewport",
+      "args": {
+        "width": 1280,
+        "height": 720
+      }
+    },
+    {
+      "n": 2,
       "action": "goto",
       "args": {
         "url": "${CLAUDIA_BASE_URL}/?app=robot-studio",
@@ -18,7 +26,7 @@
       }
     },
     {
-      "n": 2,
+      "n": 3,
       "action": "waitForLoad",
       "args": {
         "state": "networkidle",
@@ -26,7 +34,7 @@
       }
     },
     {
-      "n": 3,
+      "n": 4,
       "action": "waitFor",
       "args": {
         "selector": ".rs-root",
@@ -34,7 +42,7 @@
       }
     },
     {
-      "n": 4,
+      "n": 5,
       "action": "expectText",
       "args": {
         "selector": ".rs-brand",
@@ -42,21 +50,21 @@
       }
     },
     {
-      "n": 5,
+      "n": 6,
       "action": "expectVisible",
       "args": {
         "selector": "[role=treeitem]"
       }
     },
     {
-      "n": 6,
+      "n": 7,
       "action": "expectVisible",
       "args": {
         "selector": "#rs-text"
       }
     },
     {
-      "n": 7,
+      "n": 8,
       "action": "expectText",
       "args": {
         "selector": ".rs-say button.btn",
