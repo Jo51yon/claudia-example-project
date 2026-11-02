@@ -2,7 +2,9 @@
 
 These are mandatory. They mirror Claudia's RULES CORE (`rules_load` on the Claudia Control Plane MCP returns it in full) and
 the SafeSpaces standing rules, ported 2026-11-02 (`claudia-session-hooks-parity:develop`). Follow all of them, every time.
-Hooks in `scripts/hooks/`, wired in `.claude/settings.json`, enforce the ones marked **(enforced)**.
+Hooks in `scripts/hooks/`, wired in `.claude/settings.json`, enforce the ones marked **(enforced)**. The project factory
+writes `.claudia/project.json` and fills the integration-branch placeholders below from it; `claudia-gates.yml` fails
+while a template placeholder is left in this file.
 
 1. **Recall before acting (enforced).** At the start of every conversation and whenever the subject changes: `rules_load`,
    then `memory_recall` (with `project_slug`) and `kb_recall`, and `code_recall` before exploring the repo. `ltm_first_gate.py`
@@ -17,7 +19,7 @@ Hooks in `scripts/hooks/`, wired in `.claude/settings.json`, enforce the ones ma
 5. **No selective compliance.** If a rule conflicts with the task, say so and ask. A tool, hook or classifier denial is final
    for that route: report it with the narrowest sanctioned route; do not work around it.
 6. **Database writes (enforced).** Migrations go through CI only (a project with its own Supabase project uses its own migration CI the same way): commit the migration with a self-test under
-   `testing/sql/`, open a PR into `preview` (`migration-dry-run.yml` runs it on live and rolls back), and
+   `testing/sql/`, open a PR into `preview` (this repo's integration branch; a project with its own migration CI dry-runs it on live and rolls back), and
    `apply-migrations.yml` applies it once merged. SafeSpaces writes go through the run-live-sql runner in oursafe-space.
    Ledger and memory writes go only through the Claudia Control Plane MCP, never by SQL. `supabase_write_route.py`
    refuses a Supabase-connector write and names the route. Read-only SELECTs are fine.
@@ -32,5 +34,6 @@ Hooks in `scripts/hooks/`, wired in `.claude/settings.json`, enforce the ones ma
 9. **Record what you learn and what it cost.** Owner decisions go to the ledger in the same turn (`tasks_record_decision`).
    Pass your session meter's cumulative usage on `tasks_claim`, `tasks_transition` and `memory_write`.
 10. **A project's work lives in its own repo.** Its design, test scripts, rig manifests, storyboards, source-code map and code
-    are committed in the project's repo, never in `Jo51yon/claudia`. Pull requests need no permission: open them into the
-    branch the repo's flow names (`preview`).
+    are committed in the project's repo, never in `Jo51yon/claudia`. Pull requests need no permission: open them into this
+    repo's integration branch, `preview` (`.claudia/project.json` `integration_branch`); a promotion PR then
+    takes it to `main` when the integration branch is not `main` itself.

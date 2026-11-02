@@ -2,8 +2,10 @@ name: claudia-gates
 
 # Claudia's lifecycle gates for a project's OWN repo (owner 2026-11-02: "they must use their own repo"; the gates check
 # the code in the project's repo, not Claudia's). Installed by the project factory (skills/claudia-project-factory step 3)
-# and required on preview and main. Source of truth: Jo51yon/claudia templates/project-repo/.
+# and required on the repo's integration branch and main. Source of truth: Jo51yon/claudia templates/project-repo/.
 #
+#   config         .claudia/project.json exists and names the repo's integration branch; CLAUDE.md has no unfilled
+#                  {{PLACEHOLDER}} left from the template
 #   ledger-files   the PR names its ledger task (Ledger-Task: <feature>:<stage>) and every changed file was declared on it
 #                  (claudia_file_lock_check, the same RPC as Claudia's own file-lock-gate; it resolves the project from
 #                  this repo's name in claudia_projects)
@@ -11,7 +13,13 @@ name: claudia-gates
 #                  testing/scripts/<feature>.md and testing/rig/manifests/<feature>.json
 #   docs           a PR that adds UI (a page, or 30+ added lines under src/) changes a doc under docs/ or carries
 #                  "Docs-Exempt: [refactor|styling|no-visible-change|revert|test-only] <reason>"
-#   code-map       every source file is listed in docs/source-code-map.md
+#   code-map       every tracked file is listed in docs/source-code-map.md, except docs/, .github/, lock files and the
+#                  globs in .claudia/project.json code_map.exclude (Python, SQL, edge functions and scripts all count)
+#
+# PIPELINE PRs: the promotion PR (integration branch -> main) and the back-merge (main -> integration branch) carry only
+# commits that already passed these gates on their own PRs and span many ledger tasks, so they cannot carry one Ledger-Task
+# line. As in Claudia's own file-lock-gate.yml, they pass ledger-files and deliverables explicitly; only same-repo branches
+# qualify, so a fork's branch named "preview" does not. config, docs and code-map still run on them.
 #
 # The publishable key below is Claudia's public client key (the same one in its web app); the RPC is granted to anon.
 on:
@@ -37,7 +45,27 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: git diff --name-only "$BASE" "$HEAD" > /tmp/changed.txt && cat /tmp/changed.txt
+      - name: config
+        id: config
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          test -f .claudia/project.json || { echo "::error::.claudia/project.json is missing (the project factory writes it: integration_branch, code_map.exclude)"; exit 1; }
+          branch=$(python3 -c "import json;print(json.load(open('.claudia/project.json')).get('integration_branch',''))")
+          [ -n "$branch" ] || { echo "::error::.claudia/project.json needs integration_branch (main for a repo with only main)"; exit 1; }
+          if grep -nE '\{\{[A-Z_]+\}\}' CLAUDE.md; then echo "::error file=CLAUDE.md::an unfilled template placeholder is left in CLAUDE.md"; exit 1; fi
+          pipeline=false
+          if [ "$branch" != main ] && [ "$HEAD_REPO" = "$THIS_REPO" ] && { { [ "$HEAD_REF" = "$branch" ] && [ "$BASE_REF" = main ]; } || { [ "$HEAD_REF" = main ] && [ "$BASE_REF" = "$branch" ]; }; }; then
+            pipeline=true
+            echo "Pipeline PR ($HEAD_REF -> $BASE_REF): every commit passed ledger-files and deliverables on its own PR. Those steps pass."
+          fi
+          echo "pipeline=$pipeline" >> "$GITHUB_OUTPUT"
+          echo "integration branch: $branch"
       - name: ledger-files
+        if: steps.config.outputs.pipeline != 'true'
         env:
           BODY: ${{ github.event.pull_request.body }}
           REPO: ${{ github.event.repository.name }}
@@ -52,6 +80,7 @@ jobs:
           echo "$out"
           echo "$out" | python3 -c "import json,sys;r=json.load(sys.stdin);bad=[x for x in r if x.get('status')=='FAIL'] if isinstance(r,list) else [r];[print('::error::'+str(x.get('detail',x))) for x in bad];sys.exit(1 if bad else 0)"
       - name: deliverables
+        if: steps.config.outputs.pipeline != 'true'
         run: |
           key=$(cat /tmp/ledger_key); feature=${key%%:*}; stage=${key#*:}
           if grep -qE '^src/' /tmp/changed.txt && [ "$stage" = develop ]; then
@@ -76,8 +105,23 @@ jobs:
           echo "no UI threshold reached ($added added lines)"
       - name: code-map
         run: |
-          missing=0
-          for f in $(git ls-files 'src/**/*.ts' 'src/**/*.tsx' 'src/*.ts' 'src/*.tsx'); do
-            grep -qF "$f" docs/source-code-map.md || { echo "::error::$f is not in docs/source-code-map.md"; missing=1; }
-          done
-          exit $missing
+          git ls-files > /tmp/tracked.txt
+          python3 - <<'PY'
+          import fnmatch, json, os, re, sys
+          # fnmatch's * also matches "/", so "docs/*" covers every file under docs/.
+          exclude = ["docs/*", ".github/*", "package-lock.json", "*/package-lock.json", "npm-shrinkwrap.json", "yarn.lock",
+                     "*/yarn.lock", "pnpm-lock.yaml", "*/pnpm-lock.yaml", "bun.lockb", "*.lock", "*/*.lock"]
+          cfg = json.load(open(".claudia/project.json")) if os.path.exists(".claudia/project.json") else {}
+          exclude += (cfg.get("code_map") or {}).get("exclude", [])
+          if not os.path.exists("docs/source-code-map.md"):
+              print("::error::docs/source-code-map.md is missing"); sys.exit(1)
+          mapped = open("docs/source-code-map.md", encoding="utf-8").read()
+          files = [l.strip() for l in open("/tmp/tracked.txt") if l.strip()]
+          checked = [f for f in files if not any(fnmatch.fnmatch(f, p) for p in exclude)]
+          # a whole path, not a substring: "a.py" is not listed just because "data.py" is
+          missing = [f for f in checked if not re.search(r"(?<![\w./-])" + re.escape(f) + r"(?![\w./-])", mapped)]
+          for f in missing:
+              print(f"::error::{f} is not in docs/source-code-map.md")
+          print(f"code-map: {len(checked)} file(s) checked, {len(missing)} missing (excluded: {', '.join(exclude)})")
+          sys.exit(1 if missing else 0)
+          PY
