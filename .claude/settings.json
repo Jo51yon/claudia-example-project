@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'STANDING RULES (CLAUDE.md, mandatory, all of them): (1) rules_load, then memory_recall and kb_recall (code_recall before exploring the repo) through the Claudia Control Plane MCP before acting; (2) search memory, the ledger, the repos and uploads before asking the owner anything, and say what you searched; (3) use credentials via vault routes without exposing them; (4) verify facts before reporting a block; (5) never selectively ignore a rule; (6) claim the ledger task you work and tasks_heartbeat at least every 15 minutes; (7) brief chat, detail on the ledger.'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/ask_gate.py\"", "timeout": 10 },
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/brief_gate.py\"", "timeout": 10 },
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/claim_gate.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/ask_gate.py\"", "timeout": 10 }
+        ]
+      },
+      {
+        "matcher": "mcp__.*[Ss]upabase.*__(apply_migration|execute_sql)",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/supabase_write_route.py\"", "timeout": 10 }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/ltm_first_gate.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|WebFetch",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/egress_signpost.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|WebFetch",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/hooks/egress_signpost.py\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

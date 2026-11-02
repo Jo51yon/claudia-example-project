@@ -40,3 +40,29 @@ These run on Claudia's Supabase project and deploy only from the Claudia repo.
 The example project's **demo** on the Claudia dashboard (open to every account, Reset Demo, seeded ledger data) is a Claudia
 platform feature on the `claudia` project's ledger. Its documents stay in `Jo51yon/claudia`: `docs/example-project/README.md`,
 `testing/scripts/claudia-example-project-demo.md`.
+
+## Session hooks, project config and other tracked files
+
+Added 2026-11-02 when Claudia's session hooks and the full code-map rule were installed (claudia-gates.yml checks every tracked file except docs/, .github/ and lock files).
+
+- `.claude/settings.json` — wires the session hooks
+- `.claudia/project.json` — integration branch and code-map excludes read by claudia-gates.yml
+- `.gitignore`
+- `CLAUDE.md` — standing rules for agent sessions
+- `package.json`
+- `plan.md`
+- `README.md`
+- `scripts/hooks/ask_gate_test.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/ask_gate.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/brief_gate_test.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/brief_gate.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/claim_gate_test.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/claim_gate.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/egress_signpost_test.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/egress_signpost.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/ltm_first_gate_test.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/ltm_first_gate.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/supabase_write_route_test.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `scripts/hooks/supabase_write_route.py` — Claude Code session hook (from Jo51yon/claudia templates/project-repo)
+- `testing/README.md`
+- `tsconfig.json`
