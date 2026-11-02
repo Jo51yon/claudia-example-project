@@ -13,12 +13,20 @@
       "action": "goto",
       "args": {
         "url": "${CLAUDIA_BASE_URL}/?app=robot-studio",
-        "waitUntil": "networkidle",
+        "waitUntil": "load",
         "timeout": 30000
       }
     },
     {
       "n": 2,
+      "action": "waitForLoad",
+      "args": {
+        "state": "networkidle",
+        "timeout": 30000
+      }
+    },
+    {
+      "n": 3,
       "action": "waitFor",
       "args": {
         "selector": ".rs-root",
@@ -26,7 +34,7 @@
       }
     },
     {
-      "n": 3,
+      "n": 4,
       "action": "expectText",
       "args": {
         "selector": ".rs-brand",
@@ -34,21 +42,21 @@
       }
     },
     {
-      "n": 4,
+      "n": 5,
       "action": "expectVisible",
       "args": {
         "selector": "[role=treeitem]"
       }
     },
     {
-      "n": 5,
+      "n": 6,
       "action": "expectVisible",
       "args": {
         "selector": "#rs-text"
       }
     },
     {
-      "n": 6,
+      "n": 7,
       "action": "expectText",
       "args": {
         "selector": ".rs-say button.btn",
