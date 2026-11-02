@@ -1,0 +1,29 @@
+{
+  "name": "@jo51yon/claudia-example-project",
+  "version": "0.1.0",
+  "description": "Robot Studio, the Claudia example project's app, as a package the Claudia web app mounts at /?app=robot-studio. Design: docs/robot-studio/design.md; map: docs/source-code-map.md.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "prepare": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "@supabase/supabase-js": ">=2"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}

@@ -1,0 +1,39 @@
+name: package-ci
+
+# The example project's own gates (owner 2026-11-02: "the gates should also be checking the code in the example repo").
+# Every PR into preview or main: the package builds and type-checks, its tests pass, the source-code map names every
+# source file, and the PR names its ledger task. This is a required check on preview and main.
+on:
+  pull_request:
+    branches: [preview, main]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - name: Source-code map names every source file
+        run: |
+          missing=0
+          for f in $(git ls-files 'src/**/*.ts' 'src/**/*.tsx' 'src/*.ts'); do
+            grep -q "$f" docs/source-code-map.md || { echo "::error::$f is not in docs/source-code-map.md"; missing=1; }
+          done
+          exit $missing
+      - name: PR names its ledger task and its test script exists
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          key=$(printf '%s' "$BODY" | sed -n 's/^Ledger-Task:[[:space:]]*\([^[:space:]]*\).*/\1/p' | head -1)
+          [ -n "$key" ] || { echo "::error::PR body needs 'Ledger-Task: <feature>:<stage>' (a claudia-example-project task)"; exit 1; }
+          feature=${key%%:*}
+          case "$feature" in
+            example-robot-studio*) test -f testing/scripts/example-robot-studio.md || { echo "::error::testing/scripts/example-robot-studio.md is missing"; exit 1; } ;;
+          esac
+          echo "Ledger-Task $key"

@@ -20,3 +20,10 @@ PR is blocked by a Claudia gate for a real reason."*
 A fully provisioned project. Supabase, Cloudflare, vault credentials, and an EP entry are
 still a manual runbook — see `skills/claudia-project-factory/SKILL.md` in the Claudia repo
 for the current state of that automation boundary.
+
+## Where things are
+
+- `docs/source-code-map.md` — every part of this project, where its code lives, and the document that explains it.
+- `docs/robot-studio/design.md` — Robot Studio, this project's app (`https://claudia.sicoru.org/?app=robot-studio`).
+- `testing/scripts/example-robot-studio.md` — its test script.
+- `plan.md` — lessons learnt (append-only).
