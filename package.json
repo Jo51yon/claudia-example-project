@@ -1,12 +1,16 @@
 {
   "name": "@jo51yon/claudia-example-project",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Robot Studio, the Claudia example project's app, as a package the Claudia web app mounts at /?app=robot-studio. Design: docs/robot-studio/design.md; map: docs/source-code-map.md.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src",
+    "testing/rig/manifests"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

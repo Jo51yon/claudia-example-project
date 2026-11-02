@@ -1,0 +1,13 @@
+{
+  "id": "example-robot-studio",
+  "description": "Robot Studio (the example project's package, mounted by Claudia at /?app=robot-studio) loads for a signed-out visitor: nav, attribute tree, robot, text box and Speak button. Authored by the developer with the change (owner 2026-11-02); runs in Claudia's test-rig from node_modules. Voice-fallback steps are added once claudia #650 is deployed (the rig tests the deployed app).",
+  "requires_credentials": false,
+  "steps": [
+    { "verb": "navigate", "url": "${CLAUDIA_BASE_URL}/?app=robot-studio" },
+    { "verb": "wait_for_selector", "selector": ".rs-root" },
+    { "verb": "assert_text", "selector": ".rs-brand", "contains": "Robot Studio" },
+    { "verb": "assert_visible", "selector": "[role=treeitem]" },
+    { "verb": "assert_visible", "selector": "#rs-text" },
+    { "verb": "assert_text", "selector": ".rs-say button.btn", "contains": "Speak" }
+  ]
+}

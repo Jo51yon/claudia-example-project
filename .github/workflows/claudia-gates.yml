@@ -1,0 +1,83 @@
+name: claudia-gates
+
+# Claudia's lifecycle gates for a project's OWN repo (owner 2026-11-02: "they must use their own repo"; the gates check
+# the code in the project's repo, not Claudia's). Installed by the project factory (skills/claudia-project-factory step 3)
+# and required on preview and main. Source of truth: Jo51yon/claudia templates/project-repo/.
+#
+#   ledger-files   the PR names its ledger task (Ledger-Task: <feature>:<stage>) and every changed file was declared on it
+#                  (claudia_file_lock_check, the same RPC as Claudia's own file-lock-gate; it resolves the project from
+#                  this repo's name in claudia_projects)
+#   deliverables   a PR that changes source for a feature carries the developer-authored test script and rig manifest:
+#                  testing/scripts/<feature>.md and testing/rig/manifests/<feature>.json
+#   docs           a PR that adds UI (a page, or 30+ added lines under src/) changes a doc under docs/ or carries
+#                  "Docs-Exempt: [refactor|styling|no-visible-change|revert|test-only] <reason>"
+#   code-map       every source file is listed in docs/source-code-map.md
+#
+# The publishable key below is Claudia's public client key (the same one in its web app); the RPC is granted to anon.
+on:
+  pull_request:
+    branches: [preview, main]
+
+env:
+  CLAUDIA_URL: https://ujjisckqspndzyasptni.supabase.co
+  CLAUDIA_PUBLISHABLE_KEY: sb_publishable_UCWDqXQ9dgDj9FqVY_YXOw_99l2A7pX
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Changed files
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: git diff --name-only "$BASE" "$HEAD" > /tmp/changed.txt && cat /tmp/changed.txt
+      - name: ledger-files
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          key=$(printf '%s' "$BODY" | sed -n 's/^Ledger-Task:[[:space:]]*\([^[:space:]]*\).*/\1/p' | head -1)
+          [ -n "$key" ] || { echo "::error::PR body needs 'Ledger-Task: <feature>:<stage>' naming this project's task"; exit 1; }
+          echo "$key" > /tmp/ledger_key
+          files=$(python3 -c "import json;print(json.dumps([l.strip() for l in open('/tmp/changed.txt') if l.strip()]))")
+          out=$(curl -sS -X POST "$CLAUDIA_URL/rest/v1/rpc/claudia_file_lock_check" \
+            -H "apikey: $CLAUDIA_PUBLISHABLE_KEY" -H "Authorization: Bearer $CLAUDIA_PUBLISHABLE_KEY" -H 'Content-Type: application/json' \
+            -d "{\"p_github_repo\":\"$REPO\",\"p_natural_key\":\"$key\",\"p_changed_files\":$files}")
+          echo "$out"
+          echo "$out" | python3 -c "import json,sys;r=json.load(sys.stdin);bad=[x for x in r if x.get('status')=='FAIL'] if isinstance(r,list) else [r];[print('::error::'+str(x.get('detail',x))) for x in bad];sys.exit(1 if bad else 0)"
+      - name: deliverables
+        run: |
+          key=$(cat /tmp/ledger_key); feature=${key%%:*}; stage=${key#*:}
+          if grep -qE '^src/' /tmp/changed.txt && [ "$stage" = develop ]; then
+            for f in "testing/scripts/$feature.md" "testing/rig/manifests/$feature.json"; do
+              test -f "$f" || { echo "::error::$f is missing: the developer authors the test script and rig manifest with the change"; exit 1; }
+            done
+          fi
+          echo "deliverables ok for $key"
+      - name: docs
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          added=$(git diff --numstat "$BASE" "$HEAD" -- 'src/**/*.tsx' 'src/*.tsx' | awk '{s+=$1} END {print s+0}')
+          newpage=$(git diff --diff-filter=A --name-only "$BASE" "$HEAD" | grep -cE '^src/.*(pages?|views?|routes?)/.*\.tsx$|^src/.*/[A-Z][A-Za-z]*(Page|Studio)\.tsx$' || true)
+          if [ "$added" -ge 30 ] || [ "$newpage" -gt 0 ]; then
+            if grep -E '^docs/.*\.md$' /tmp/changed.txt | grep -vqE '^docs/source-code-map\.md$'; then echo "docs changed"; exit 0; fi
+            printf '%s' "$BODY" | grep -qE '^Docs-Exempt:[[:space:]]*\[(refactor|styling|no-visible-change|revert|test-only)\][[:space:]]+.{20,}' && { echo "docs exempt"; exit 0; }
+            echo "::error::This PR adds UI ($added lines, $newpage new page(s)) but changes no doc under docs/ (the source-code map does not count) and has no Docs-Exempt line"; exit 1
+          fi
+          echo "no UI threshold reached ($added added lines)"
+      - name: code-map
+        run: |
+          missing=0
+          for f in $(git ls-files 'src/**/*.ts' 'src/**/*.tsx' 'src/*.ts' 'src/*.tsx'); do
+            grep -qF "$f" docs/source-code-map.md || { echo "::error::$f is not in docs/source-code-map.md"; missing=1; }
+          done
+          exit $missing
