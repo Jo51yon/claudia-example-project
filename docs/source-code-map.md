@@ -1,6 +1,6 @@
 # Source code map: claudia-example-project
 
-> **Version:** 1.1 — **Last updated:** 2026-11-02
+> **Version:** 1.2 — **Last updated:** 2026-11-02
 
 What this project is made of, where each part lives, and the document that explains it. Keep it current in the same
 commit as the change (`docs/_contract.md`); `package-ci` fails a PR whose source file is not listed here.
@@ -17,7 +17,9 @@ commit as the change (`docs/_contract.md`); `package-ci` fails a PR whose source
 | `src/robot-studio/useRobotState.ts` | Loads and saves the signed-in person's robot row, subscribes over Realtime, speaks when a chat bumps `say_seq` | §Chat control |
 | `src/robot-studio/useSpeech.ts` | Probes Chirp availability; Chirp 3 HD audio, or the Robot (browser) voice with no error | §Speech |
 | `test/catalogue.test.mjs` | Catalogue checks on the built package | test script A0 |
-| `.github/workflows/package-ci.yml` | This project's gates: build, type-check, tests, this map, the PR's ledger task | — |
+| `.github/workflows/package-ci.yml` | Build, type-check, tests | — |
+| `.github/workflows/claudia-gates.yml` | Claudia's gates for this repo: ledger task and declared files, developer-authored test script and rig manifest, docs for UI, this map (template from `Jo51yon/claudia` `templates/project-repo/`) | — |
+| `testing/rig/manifests/example-robot-studio.json` | Rig manifest, shipped in the package; runs in Claudia's test-rig | test script |
 | `docs/robot-studio/design.md` | Design | — |
 | `testing/scripts/example-robot-studio.md` | Test script | — |
 
