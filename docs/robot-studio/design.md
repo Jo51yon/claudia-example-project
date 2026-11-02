@@ -1,6 +1,7 @@
 # Robot Studio: the Claudia example project's UI
 
-> **Version:** 1.1 — **Last updated:** 2026-11-02 (moved from `Jo51yon/claudia` `docs/example-project/robot-studio.md`; code paths below are in that repo, see `docs/source-code-map.md`)
+> **Version:** 1.2 — **Last updated:** 2026-11-02. Moved from `Jo51yon/claudia` and turned into this repo's package
+> (`@jo51yon/claudia-example-project`); see `docs/source-code-map.md`.
 
 Status: built 2026-11-01 (owner request). Ledger tasks on `claudia-example-project`: `example-robot-studio-design:develop`
 (this design), `example-robot-studio:develop`, then test and demo. Test script `testing/scripts/example-robot-studio.md` (this repo).
@@ -33,8 +34,11 @@ through Web Audio and sets the mouth opening from the live audio level, so the l
 Rules it keeps: signed-in users only (JWT checked), 600 characters, 12 requests a minute per user per instance.
 The key is the edge function secret `GOOGLE_TTS_API_KEY`; without it the function answers `503 tts_not_configured`.
 
-When Chirp is unavailable (signed out, secret missing, upstream error) the page falls back to the browser's own voice,
-moves the mouth to a rhythm, and says so in the status line. It never labels a browser voice as Chirp.
+The voice list starts with **Robot**, the browser's own speech voice, which always works. On load the page sends
+`{"probe":true}` to `example-robot-speak`, which answers `{"chirp":<secret set>}`. When Chirp is unavailable (signed out
+or secret missing) Robot is the selected voice and the Chirp voices are greyed out and cannot be chosen, so the demo
+plays the voice it shows with no error. A Chirp request that fails (upstream error, rate limit) also speaks with Robot,
+silently. The mouth follows the real audio for Chirp and a rhythm for Robot. A browser voice is never labelled Chirp.
 
 ## Chat control (MCP)
 
@@ -56,3 +60,16 @@ speech to be heard. Migration `20261101130000_claudia_example_robot_studio.sql`.
 - The demo reset (`claudia_example_demo_reset`) keeps every task in the demo baseline, these ledger tasks included, and
   removes only changes made after it (claudia #633).
 - A signed-out visitor can design the robot and use the browser voice; nothing is saved and chat control is off.
+
+## Where the code lives (2026-11-02)
+
+Owner decision 2026-11-02: the project's code lives in the project's own repo. Robot Studio's page is this repo's package
+`@jo51yon/claudia-example-project` (`src/robot-studio/`). Claudia installs it from this repo by tag, like
+`@jo51yon/claudia-calendar`, and mounts it at `/?app=robot-studio` through a small host adapter
+(`src/robot-studio-host.tsx` in `Jo51yon/claudia`) that hands over the Supabase client, the endpoints and the shared Claudia
+components (`ClaudiaTree`, `ClaudiaCard`, `ConnectAIPanel`). The package never imports Claudia code (`src/robot-studio/host.ts`).
+
+The server side stays on Claudia's platform because it runs there: the edge functions `example-robot-speak` and
+`example-robot-mcp` and the migration `20261101130000_claudia_example_robot_studio.sql` deploy only from `Jo51yon/claudia`.
+Claudia's robot MCP catalogue (`supabase/functions/example-robot-mcp/robot.ts`) is checked against this package's
+catalogue in Claudia's CI.
