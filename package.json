@@ -1,6 +1,6 @@
 {
   "name": "@jo51yon/claudia-example-project",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Robot Studio, the Claudia example project's app, as a package the Claudia web app mounts at /?app=robot-studio. Design: docs/robot-studio/design.md; map: docs/source-code-map.md.",
   "type": "module",
   "main": "./dist/index.js",

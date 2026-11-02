@@ -1,13 +1,60 @@
 {
-  "id": "example-robot-studio",
-  "description": "Robot Studio (the example project's package, mounted by Claudia at /?app=robot-studio) loads for a signed-out visitor: nav, attribute tree, robot, text box and Speak button. Authored by the developer with the change (owner 2026-11-02); runs in Claudia's test-rig from node_modules. Voice-fallback steps are added once claudia #650 is deployed (the rig tests the deployed app).",
-  "requires_credentials": false,
+  "script_id": "example-robot-studio",
+  "script_ver": "v1",
+  "feature_slug": "example-robot-studio",
+  "role": "anon",
+  "_why": [
+    "Robot Studio (the example project's package, mounted by Claudia at /?app=robot-studio) loads for a signed-out visitor: nav, attribute tree, robot, text box and Speak button. Authored by the developer with the change (owner 2026-11-02); runs in Claudia's test-rig from node_modules. Voice-fallback steps are added once claudia #650 is deployed (the rig tests the deployed app)."
+  ],
+  "_converted_from": "claudia executor.mjs format (testing/rig/convert-manifest.mjs)",
   "steps": [
-    { "verb": "navigate", "url": "${CLAUDIA_BASE_URL}/?app=robot-studio" },
-    { "verb": "wait_for_selector", "selector": ".rs-root" },
-    { "verb": "assert_text", "selector": ".rs-brand", "contains": "Robot Studio" },
-    { "verb": "assert_visible", "selector": "[role=treeitem]" },
-    { "verb": "assert_visible", "selector": "#rs-text" },
-    { "verb": "assert_text", "selector": ".rs-say button.btn", "contains": "Speak" }
-  ]
+    {
+      "n": 1,
+      "action": "goto",
+      "args": {
+        "url": "${CLAUDIA_BASE_URL}/?app=robot-studio",
+        "waitUntil": "networkidle",
+        "timeout": 30000
+      }
+    },
+    {
+      "n": 2,
+      "action": "waitFor",
+      "args": {
+        "selector": ".rs-root",
+        "timeout": 20000
+      }
+    },
+    {
+      "n": 3,
+      "action": "expectText",
+      "args": {
+        "selector": ".rs-brand",
+        "text": "Robot Studio"
+      }
+    },
+    {
+      "n": 4,
+      "action": "expectVisible",
+      "args": {
+        "selector": "[role=treeitem]"
+      }
+    },
+    {
+      "n": 5,
+      "action": "expectVisible",
+      "args": {
+        "selector": "#rs-text"
+      }
+    },
+    {
+      "n": 6,
+      "action": "expectText",
+      "args": {
+        "selector": ".rs-say button.btn",
+        "text": "Speak"
+      }
+    }
+  ],
+  "requires_credentials": false
 }
